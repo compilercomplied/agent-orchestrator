@@ -1,0 +1,25 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+PLAN.md
+TASK.md
+
+# Build artifacts
+agent-orchestrator
+
+# Testing
+*_test.go
+
+# IDE
+.vscode
+.idea
+
+# Temporary files
+*.tmp
+*.log
+
+# Working directories
+/tmp
