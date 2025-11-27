@@ -4,13 +4,8 @@ FROM golang:1.23.3-alpine AS builder
 # Install build dependencies
 RUN apk add --no-cache git
 
-# Set working directory
 WORKDIR /app
-
-# Copy go mod files
 COPY go.mod ./
-
-# Download dependencies
 RUN go mod download
 
 # Copy source code
@@ -22,8 +17,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o agent-orchestrato
 # Runtime stage
 FROM alpine:latest
 
-# Install ca-certificates for HTTPS requests
-RUN apk --no-cache add ca-certificates
+# Install ca-certificates for HTTPS requests and Claude Code dependencies
+RUN apk --no-cache add ca-certificates curl bash libgcc libstdc++ ripgrep git
 
 # Create a non-root user
 RUN addgroup -g 1000 appuser && \
@@ -35,18 +30,18 @@ WORKDIR /app
 # Copy the binary from builder
 COPY --from=builder /app/agent-orchestrator .
 
-# Create working directory for agent tasks
-RUN mkdir -p /tmp/agent-tasks && \
-    chown -R appuser:appuser /tmp/agent-tasks
+# Install Claude Code globally as root and move to system location
+RUN curl -fsSL https://claude.ai/install.sh | bash && \
+    cp /root/.local/bin/claude /usr/local/bin/claude && \
+    chmod +x /usr/local/bin/claude
 
-# Switch to non-root user
+# Create working directory for agent tasks and Claude config
+RUN mkdir -p /tmp/agent-tasks /home/appuser/.config/claude && \
+    chown -R appuser:appuser /tmp/agent-tasks /home/appuser
+
 USER appuser
 
-# Expose the default port
 EXPOSE 8080
 
-# Set default command
 ENTRYPOINT ["/app/agent-orchestrator"]
-
-# Default arguments (can be overridden)
 CMD ["-port", "8080", "-working-dir", "/tmp/agent-tasks"]

@@ -35,7 +35,7 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/health", s.healthCheck)
 
 	s.httpServer = &http.Server{
-		Addr:         fmt.Sprintf(":%d", s.config.Port),
+		Addr:         fmt.Sprintf("0.0.0.0:%d", s.config.Port),
 		Handler:      s.loggingMiddleware(mux),
 		ReadTimeout:  s.config.ReadTimeout,
 		WriteTimeout: s.config.WriteTimeout,
