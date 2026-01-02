@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	v1 "github.com/compilercomplied/agent-orchestrator/api/v1"
 )
 
 func TestIntegration_FileCreation(t *testing.T) {
@@ -83,8 +85,8 @@ func TestIntegration_FileCreation(t *testing.T) {
 	}
 
 	// Prepare request
-	taskRequest := map[string]string{
-		"task": "write hello world in a file named test.md",
+	taskRequest := v1.TaskRequest{
+		Task: "write hello world in a file named test.md",
 	}
 	requestBody, err := json.Marshal(taskRequest)
 	if err != nil {
@@ -105,13 +107,13 @@ func TestIntegration_FileCreation(t *testing.T) {
 	}
 
 	// Decode response
-	var taskResponse map[string]string
+	var taskResponse v1.TaskResponse
 	if err := json.NewDecoder(resp.Body).Decode(&taskResponse); err != nil {
 		t.Fatalf("Failed to decode response: %v", err)
 	}
 
-	if taskResponse["status"] != "accepted" {
-		t.Fatalf("Expected status 'accepted', got '%s'", taskResponse["status"])
+	if taskResponse.Status != "accepted" {
+		t.Fatalf("Expected status 'accepted', got '%s'", taskResponse.Status)
 	}
 
 	t.Logf("Task accepted successfully")

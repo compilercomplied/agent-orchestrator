@@ -1,4 +1,4 @@
-package handler
+package v1
 
 type TaskRequest struct {
 	Task string `json:"task"`

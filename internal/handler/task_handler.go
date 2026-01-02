@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	v1 "github.com/compilercomplied/agent-orchestrator/api/v1"
 	"github.com/compilercomplied/agent-orchestrator/internal/agent"
 )
 
@@ -26,7 +27,7 @@ func (h *TaskHandler) HandleTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req TaskRequest
+	var req v1.TaskRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Printf("Failed to decode request: %v", err)
 		h.sendError(w, "invalid request body", http.StatusBadRequest)
@@ -47,7 +48,7 @@ func (h *TaskHandler) HandleTask(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	response := TaskResponse{
+	response := v1.TaskResponse{
 		Status:  "accepted",
 		Message: "Task has been accepted and is being processed",
 	}
@@ -60,5 +61,5 @@ func (h *TaskHandler) HandleTask(w http.ResponseWriter, r *http.Request) {
 func (h *TaskHandler) sendError(w http.ResponseWriter, message string, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(ErrorResponse{Error: message})
+	json.NewEncoder(w).Encode(v1.ErrorResponse{Error: message})
 }
