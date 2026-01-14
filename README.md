@@ -32,21 +32,21 @@ go build -o agent-orchestrator .
 ### Command-line Flags
 
 - `-port`: Server port (default: 8080)
-- `-claude-binary`: Path to claude binary (default: "claude")
-- `-working-dir`: Working directory for agent execution (default: "/tmp/agent-tasks")
+- `-kubeconfig`: Path to kubeconfig file (optional, defaults to standard locations)
+- `-namespace`: Kubernetes namespace to launch agents in (default: "agents")
 - `-task-timeout`: Timeout for task execution (default: 30m)
 
 ### Example
 
 ```bash
-./agent-orchestrator -port 8080 -working-dir ./tasks -task-timeout 1h
+./agent-orchestrator -port 8080 -namespace agents -task-timeout 1h
 ```
 
 ## API Endpoints
 
 ### POST /api/tasks
 
-Submit a task for Claude Code to execute.
+Submit a task for Claude Code to execute. The orchestrator will spin up a Kubernetes Pod to run the agent.
 
 **Request Body:**
 ```json
@@ -118,10 +118,10 @@ agent-orchestrator/
 
 1. Client sends a POST request to `/api/tasks` with a task description
 2. Server validates the request and returns 202 Accepted immediately
-3. Task is executed asynchronously by forking a Claude Code process
-4. Claude Code runs with `--dangerously-skip-permissions` flag and the task as argument
-5. Output is logged to server stdout/stderr
-6. Process completes or times out based on configuration
+3. Task is executed asynchronously by creating a Kubernetes Pod
+4. The Pod runs the Claude Code agent with `--dangerously-skip-permissions` flag and the task as argument
+5. The orchestrator monitors the Pod status and cleans it up after completion or timeout
+6. Process status and logs are available via Kubernetes tools (kubectl)
 
 ## Logging
 

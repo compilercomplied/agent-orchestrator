@@ -37,18 +37,18 @@ func NewServer(config Config, taskHandler *handler.TaskHandler) *Server {
 // Run parses flags, initializes dependencies, and starts the server with graceful shutdown.
 func Run() {
 	port := flag.Int("port", 8080, "Server port")
-	claudeBinary := flag.String("claude-binary", "claude", "Path to claude binary")
-	workingDir := flag.String("working-dir", "/tmp/agent-tasks", "Working directory for agent execution")
+	kubeconfig := flag.String("kubeconfig", "", "Base64 encoded kubeconfig content")
+	namespace := flag.String("namespace", "agents", "Kubernetes namespace")
 	taskTimeout := flag.Duration("task-timeout", 30*time.Minute, "Timeout for task execution")
 	flag.Parse()
 
-	if err := os.MkdirAll(*workingDir, 0755); err != nil {
-		log.Fatalf("Failed to create working directory: %v", err)
+	agentManager, err := agent.NewManager(*kubeconfig, *namespace, *taskTimeout)
+	if err != nil {
+		log.Fatalf("Failed to initialize agent manager: %v", err)
 	}
 
-	agentManager := agent.NewManager(*claudeBinary, *workingDir, *taskTimeout)
-	if err := agentManager.ValidateClaudeBinary(); err != nil {
-		log.Fatalf("Claude binary validation failed: %v", err)
+	if err := agentManager.ValidateConfig(); err != nil {
+		log.Fatalf("Agent manager validation failed: %v", err)
 	}
 
 	taskHandler := handler.NewTaskHandler(agentManager)
