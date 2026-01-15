@@ -44,4 +44,3 @@ USER appuser
 EXPOSE 8080
 
 ENTRYPOINT ["/app/agent-orchestrator"]
-CMD ["-port", "8080", "-working-dir", "/tmp/agent-tasks"]

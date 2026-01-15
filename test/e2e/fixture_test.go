@@ -8,7 +8,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"net/http"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 )

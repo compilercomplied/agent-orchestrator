@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	"github.com/compilercomplied/agent-orchestrator/internal/agent"
+	"github.com/compilercomplied/agent-orchestrator/internal/configuration"
 	"github.com/compilercomplied/agent-orchestrator/internal/handler"
 )
 
@@ -34,15 +34,14 @@ func NewServer(config Config, taskHandler *handler.TaskHandler) *Server {
 	}
 }
 
-// Run parses flags, initializes dependencies, and starts the server with graceful shutdown.
+// Run parses environment variables, initializes dependencies, and starts the server with graceful shutdown.
 func Run() {
-	port := flag.Int("port", 8080, "Server port")
-	kubeconfig := flag.String("kubeconfig", "", "Base64 encoded kubeconfig content")
-	namespace := flag.String("namespace", "agents", "Kubernetes namespace")
-	taskTimeout := flag.Duration("task-timeout", 30*time.Minute, "Timeout for task execution")
-	flag.Parse()
+	serverCfg, agentCfg, err := configuration.Load()
+	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
 
-	agentManager, err := agent.NewManager(*kubeconfig, *namespace, *taskTimeout)
+	agentManager, err := agent.NewManager(serverCfg.KubeConfig, serverCfg.Namespace, serverCfg.TaskTimeout, agentCfg)
 	if err != nil {
 		log.Fatalf("Failed to initialize agent manager: %v", err)
 	}
@@ -54,7 +53,7 @@ func Run() {
 	taskHandler := handler.NewTaskHandler(agentManager)
 
 	serverConfig := Config{
-		Port:         *port,
+		Port:         serverCfg.Port,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}

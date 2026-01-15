@@ -9,10 +9,10 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
 	"strings"
 	"time"
 
+	"github.com/compilercomplied/agent-orchestrator/internal/configuration"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -24,9 +24,10 @@ type Manager struct {
 	namespace string
 	timeout   time.Duration
 	image     string
+	agentCfg  *configuration.AgentConfig
 }
 
-func NewManager(kubeconfigBase64, namespace string, timeout time.Duration) (*Manager, error) {
+func NewManager(kubeconfigBase64, namespace string, timeout time.Duration, agentCfg *configuration.AgentConfig) (*Manager, error) {
 	if kubeconfigBase64 == "" {
 		return nil, fmt.Errorf("kubeconfig base64 string is required")
 	}
@@ -51,6 +52,7 @@ func NewManager(kubeconfigBase64, namespace string, timeout time.Duration) (*Man
 		namespace: namespace,
 		timeout:   timeout,
 		image:     "ghcr.io/compilercomplied/claude-agent:latest",
+		agentCfg:  agentCfg,
 	}, nil
 }
 
@@ -62,11 +64,11 @@ func (m *Manager) ExecuteTask(ctx context.Context, task string) error {
 	envVars := []corev1.EnvVar{
 		{
 			Name:  "ANTHROPIC_API_KEY",
-			Value: os.Getenv("ANTHROPIC_API_KEY"),
+			Value: m.agentCfg.AnthropicKey,
 		},
 		{
 			Name:  "GITHUB_TOKEN",
-			Value: os.Getenv("GITHUB_TOKEN"),
+			Value: m.agentCfg.GithubToken,
 		},
 	}
 
