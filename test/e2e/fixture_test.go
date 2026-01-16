@@ -41,22 +41,8 @@ func (f *E2EFixture) SetUp(ctx context.Context) error {
 	f.t.Log("Setting up E2E Fixture...")
 
 	// 1. Environment Verification
-	f.kubeconfig = os.Getenv("KUBECONFIG")
-	if f.kubeconfig == "" {
-		f.t.Skip("KUBECONFIG not set, skipping E2E test")
-	}
-
-	f.serverURL = os.Getenv("E2E_SERVER_URL")
-	if f.serverURL == "" {
-		f.serverURL = "http://localhost:8080"
-	}
-
-	requiredEnv := []string{"ANTHROPIC_API_KEY", "GITHUB_TOKEN"}
-	for _, env := range requiredEnv {
-		if os.Getenv(env) == "" {
-			return fmt.Errorf("required environment variable %s is not set", env)
-		}
-	}
+	f.kubeconfig = getEnv("KUBECONFIG")
+	f.serverURL = getEnv("E2E_SERVER_URL")
 
 	// 2. Setup Kubernetes Client
 	decodedKubeConfig, err := base64.StdEncoding.DecodeString(f.kubeconfig)
@@ -108,4 +94,12 @@ func waitForServer(ctx context.Context, url string) bool {
 			}
 		}
 	}
+}
+
+func getEnv(key string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		panic(fmt.Sprintf("required environment variable %s is not set", key))
+	}
+	return val
 }

@@ -23,3 +23,4 @@ agent-orchestrator
 
 # Working directories
 /tmp
+iac/

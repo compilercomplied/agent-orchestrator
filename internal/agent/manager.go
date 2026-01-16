@@ -97,15 +97,6 @@ func (m *Manager) ExecuteTask(ctx context.Context, task string) error {
 		return fmt.Errorf("failed to create pod: %w", err)
 	}
 
-	// Cleanup defer
-	defer func() {
-		log.Printf("Cleaning up pod %s", podName)
-		err := m.clientset.CoreV1().Pods(m.namespace).Delete(context.Background(), podName, metav1.DeleteOptions{})
-		if err != nil {
-			log.Printf("Failed to delete pod %s: %v", podName, err)
-		}
-	}()
-
 	// Wait for Pod completion
 	log.Printf("Waiting for pod %s to complete...", podName)
 	
