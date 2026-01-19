@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+set -o pipefail
 
 # Ensure we are in the project root
 cd "$(dirname "$0")/.."
@@ -13,11 +14,20 @@ fi
 
 echo "Loading configuration from Pulumi..."
 
-eval $(pulumi config -C iac --show-secrets --json | jq -r '
-  to_entries | 
-  .[] | 
-  "export " + (.key | split(":") | last) + "='\''" + (if .value | type == "object" then .value.value else .value end | tostring) + "'\''"
-')
+eval $(
+    pulumi config --stack prod -C iac --show-secrets --json | \
+    jq -r '
+        to_entries | .[] |
+        "export " + (.key | split(":") | last) + "='\''" +
+        (
+            if .value | type == "object"
+            then .value.value
+            else .value
+            end | tostring
+        ) + "'\''"
+    '
+)
+
 
 echo "Configuration loaded. Starting E2E tests..."
 
