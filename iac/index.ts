@@ -1,6 +1,5 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
-import * as docker from "@pulumi/docker";
 import { createCleanupCronJob } from "./cronjob";
 
 const config = new pulumi.Config("agent-orchestrator");
@@ -17,19 +16,6 @@ const nsAgents = new k8s.core.v1.Namespace("ns-agents", {
 });
 
 createCleanupCronJob(nsAgents);
-
-// 2. Build Image
-// We build the image from the context ".." (root of the repo)
-// We tag it as 'agent-orchestrator:latest'
-const image = new docker.Image("agent-orchestrator-image", {
-    build: {
-        context: "..",
-        dockerfile: "../Dockerfile",
-        platform: "linux/amd64",
-    },
-    imageName: "agent-orchestrator:latest",
-    skipPush: true, // For local k3s/docker environment, we might skip push if sharing docker daemon
-});
 
 // The orchestrator needs to manage pods in the 'agents' namespace.
 const serviceAccount = new k8s.core.v1.ServiceAccount("agent-orchestrator-serviceaccount", {
@@ -97,8 +83,8 @@ const deployment = new k8s.apps.v1.Deployment("orchestrator-dep", {
                 serviceAccountName: serviceAccount.metadata.name,
                 containers: [{
                     name: "agent-orchestrator",
-                    image: image.imageName,
-                    imagePullPolicy: "Never", // Use local image for k3s
+                    image: "ghcr.io/compilercomplied/agent-orchestrator:latest",
+                    imagePullPolicy: "Always",
                     ports: [{ containerPort: 8080 }],
                     env: [
                         { name: "PORT", value: "8080" }, // App constant, but safe to set
