@@ -7,12 +7,10 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"io"
-	"log"
-	"strings"
 	"time"
 
 	"github.com/compilercomplied/agent-orchestrator/internal/configuration"
+	"github.com/compilercomplied/agent-orchestrator/internal/logging"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -56,9 +54,10 @@ func NewManager(kubeconfigBase64, namespace string, timeout time.Duration, agent
 	}, nil
 }
 
-func (m *Manager) ExecuteTask(ctx context.Context, task string) error {
+// CreateTask creates the agent pod and returns its name immediately.
+func (m *Manager) CreateTask(ctx context.Context, task string) (string, error) {
 	podName := m.generatePodName(task)
-	log.Printf("Starting Claude Code agent in k8s. Pod: %s, Task length: %d", podName, len(task))
+	logging.Printf("Starting Claude Code agent in k8s. Pod: %s, Task length: %d", podName, len(task))
 
 	// Prepare Environment Variables
 	envVars := []corev1.EnvVar{
@@ -75,6 +74,10 @@ func (m *Manager) ExecuteTask(ctx context.Context, task string) error {
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: podName,
+			Labels: map[string]string{
+				"app":                          "claude-worker",
+				"app.kubernetes.io/managed-by": "agent-orchestrator",
+			},
 		},
 		Spec: corev1.PodSpec{
 			RestartPolicy: corev1.RestartPolicyNever,
@@ -94,11 +97,15 @@ func (m *Manager) ExecuteTask(ctx context.Context, task string) error {
 	// Create Pod
 	_, err := m.clientset.CoreV1().Pods(m.namespace).Create(ctx, pod, metav1.CreateOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to create pod: %w", err)
+		return "", fmt.Errorf("failed to create pod: %w", err)
 	}
 
-	// Wait for Pod completion
-	log.Printf("Waiting for pod %s to complete...", podName)
+	return podName, nil
+}
+
+// WatchTask waits for the specified pod to complete.
+func (m *Manager) WatchTask(ctx context.Context, podName string) error {
+	logging.Printf("Waiting for pod %s to complete...", podName)
 	
 	waitCtx, cancel := context.WithTimeout(ctx, m.timeout)
 	defer cancel()
@@ -113,49 +120,23 @@ func (m *Manager) ExecuteTask(ctx context.Context, task string) error {
 		case <-ticker.C:
 			p, err := m.clientset.CoreV1().Pods(m.namespace).Get(waitCtx, podName, metav1.GetOptions{})
 			if err != nil {
-				log.Printf("Error getting pod status: %v", err)
+				logging.Printf("Error getting pod status: %v", err)
 				continue
 			}
 
 			switch p.Status.Phase {
 			case corev1.PodSucceeded:
-				log.Printf("Pod %s succeeded", podName)
-				m.logPodOutput(ctx, podName)
+				logging.Printf("Pod %s succeeded", podName)
 				return nil
 			case corev1.PodFailed:
-				log.Printf("Pod %s failed", podName)
-				m.logPodOutput(ctx, podName)
+				logging.Printf("Pod %s failed", podName)
 				return fmt.Errorf("pod %s failed", podName)
 			case corev1.PodUnknown:
-				log.Printf("Pod %s status unknown", podName)
+				logging.Printf("Pod %s status unknown", podName)
 			default:
 				// Pending or Running
 			}
 		}
-	}
-}
-
-func (m *Manager) logPodOutput(ctx context.Context, podName string) {
-	req := m.clientset.CoreV1().Pods(m.namespace).GetLogs(podName, &corev1.PodLogOptions{})
-	podLogs, err := req.Stream(ctx)
-	if err != nil {
-		log.Printf("Error opening log stream for pod %s: %v", podName, err)
-		return
-	}
-	defer podLogs.Close()
-
-	buf := new(strings.Builder)
-	_, err = io.Copy(buf, podLogs)
-	if err != nil {
-		log.Printf("Error copying log stream for pod %s: %v", podName, err)
-		return
-	}
-
-	output := buf.String()
-	if output != "" {
-		log.Printf("=== POD LOGS (%s) ===\n%s\n=======================", podName, output)
-	} else {
-		log.Printf("Pod %s produced no logs", podName)
 	}
 }
 

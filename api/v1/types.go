@@ -7,6 +7,7 @@ type TaskRequest struct {
 type TaskResponse struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`
+	PodName string `json:"pod_name"`
 }
 
 type ErrorResponse struct {
