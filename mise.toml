@@ -11,5 +11,10 @@ description = "Run the application"
 run = "go run main.go"
 
 [tasks."test:e2e"]
-description = "Run E2E tests (requires server to be running)"
+description = "Run E2E tests against a local server (server has to be running)"
+env = { E2E_SERVER_URL = "http://localhost:8080" }
 run = "go test -v ./test/e2e/..."
+
+[tasks."test:e2e-docker"]
+description = "Run E2E tests using Docker Compose"
+run = "scripts/run-e2e.sh"

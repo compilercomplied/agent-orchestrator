@@ -32,3 +32,4 @@ Thumbs.db
 
 # Task working directories
 /tasks/
+.env

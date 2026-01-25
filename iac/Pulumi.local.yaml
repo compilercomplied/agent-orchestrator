@@ -6,3 +6,4 @@ config:
     secure: v1:DsDEIO7PsE9bgDHz:SrTG0dnf3OG/SnrPlmQcwJ7B5U8oGvoKgNWZJHl+HN5iLLqBBJtdXNvFjhNQyi0367pO+2gKX5E=
   agent-orchestrator:ANTHROPIC_API_KEY:
     secure: v1:BJsabaDdcmPsBWJh:YlmgHhfwhrRIy5FLMNkt5EF6TgFJR3i9tB+/9jGCquYF9AGm93OMI3gylF166Ep+LXw5q+CizzlEtluu94mRz8iDyX3zZK3v7iumoNQgFCqU9dGctrlGgUlvW60xI+sr35uh2mZSvXcMvDNXLHaOb8CrMTtjbHJ0xrbQjw==
+  agent-orchestrator:LOG_FORMAT: plain

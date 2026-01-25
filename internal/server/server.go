@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,6 +12,7 @@ import (
 	"github.com/compilercomplied/agent-orchestrator/internal/agent"
 	"github.com/compilercomplied/agent-orchestrator/internal/configuration"
 	"github.com/compilercomplied/agent-orchestrator/internal/handler"
+	"github.com/compilercomplied/agent-orchestrator/internal/logging"
 )
 
 type Config struct {
@@ -34,20 +34,21 @@ func NewServer(config Config, taskHandler *handler.TaskHandler) *Server {
 	}
 }
 
-// Run parses environment variables, initializes dependencies, and starts the server with graceful shutdown.
 func Run() {
+	logging.Init(os.Getenv("LOG_FORMAT"))
+
 	serverCfg, agentCfg, err := configuration.Load()
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+		logging.Fatalf("Failed to load configuration: %v", err)
 	}
 
 	agentManager, err := agent.NewManager(serverCfg.KubeConfig, serverCfg.Namespace, serverCfg.TaskTimeout, agentCfg)
 	if err != nil {
-		log.Fatalf("Failed to initialize agent manager: %v", err)
+		logging.Fatalf("Failed to initialize agent manager: %v", err)
 	}
 
 	if err := agentManager.ValidateConfig(); err != nil {
-		log.Fatalf("Agent manager validation failed: %v", err)
+		logging.Fatalf("Agent manager validation failed: %v", err)
 	}
 
 	taskHandler := handler.NewTaskHandler(agentManager)
@@ -62,7 +63,7 @@ func Run() {
 
 	go func() {
 		if err := srv.Start(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server failed to start: %v", err)
+			logging.Fatalf("Server failed to start: %v", err)
 		}
 	}()
 
@@ -74,10 +75,10 @@ func Run() {
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("Server forced to shutdown: %v", err)
+		logging.Fatalf("Server forced to shutdown: %v", err)
 	}
 
-	log.Println("Server exited")
+	logging.Printf("Server exited")
 }
 
 func (s *Server) Start() error {
@@ -92,12 +93,12 @@ func (s *Server) Start() error {
 		WriteTimeout: s.config.WriteTimeout,
 	}
 
-	log.Printf("Starting server on port %d", s.config.Port)
+	logging.Printf("Starting server on port %d", s.config.Port)
 	return s.httpServer.ListenAndServe()
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
-	log.Println("Shutting down server...")
+	logging.Printf("Shutting down server...")
 	return s.httpServer.Shutdown(ctx)
 }
 
@@ -114,8 +115,8 @@ func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 		}
 
 		start := time.Now()
-		log.Printf("Started %s %s", r.Method, r.URL.Path)
+		logging.Printf("Started %s %s", r.Method, r.URL.Path)
 		next.ServeHTTP(w, r)
-		log.Printf("Completed %s %s in %v", r.Method, r.URL.Path, time.Since(start))
+		logging.Printf("Completed %s %s in %v", r.Method, r.URL.Path, time.Since(start))
 	})
 }

@@ -47,6 +47,15 @@ func TestE2E_TaskExecution(t *testing.T) {
 	}
 	t.Log("Task accepted by API")
 
+	var taskResp v1.TaskResponse
+	if err := json.NewDecoder(resp.Body).Decode(&taskResp); err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
+	}
+	if taskResp.PodName == "" {
+		t.Fatal("Response did not contain PodName")
+	}
+	t.Logf("Tracking Pod: %s", taskResp.PodName)
+
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
 
@@ -57,33 +66,30 @@ func TestE2E_TaskExecution(t *testing.T) {
 		case <-ctx.Done():
 			t.Fatal("Timeout waiting for Pod completion")
 		case <-ticker.C:
-			pods, err := fixture.Client().CoreV1().Pods(fixture.Namespace()).List(ctx, metav1.ListOptions{})
+			pod, err := fixture.Client().CoreV1().Pods(fixture.Namespace()).Get(ctx, taskResp.PodName, metav1.GetOptions{})
 			if err != nil {
-				t.Logf("Error listing pods: %v", err)
+				t.Logf("Error getting pod %s: %v", taskResp.PodName, err)
 				continue
 			}
 
-			if len(pods.Items) == 0 {
-				continue
+			// Verify Labels for Observability
+			if pod.Labels["app"] != "claude-worker" {
+				t.Errorf("Pod %s missing expected label 'app: claude-worker'. Got: %v", pod.Name, pod.Labels["app"])
+			}
+			if pod.Labels["app.kubernetes.io/managed-by"] != "agent-orchestrator" {
+				t.Errorf("Pod %s missing expected label 'app.kubernetes.io/managed-by: agent-orchestrator'. Got: %v", pod.Name, pod.Labels["app.kubernetes.io/managed-by"])
 			}
 
-			for _, pod := range pods.Items {
-				t.Logf("Pod %s is in phase: %s", pod.Name, pod.Status.Phase)
-				if pod.Status.Phase == corev1.PodSucceeded {
-					t.Logf("Pod %s succeeded!", pod.Name)
-
-					logReq := fixture.Client().CoreV1().Pods(fixture.Namespace()).GetLogs(pod.Name, &corev1.PodLogOptions{})
-					logs, err := logReq.Do(ctx).Raw()
-					if err == nil {
-						t.Logf("Pod Logs:\n%s", string(logs))
-					}
-					return
-				}
-				if pod.Status.Phase == corev1.PodFailed {
-					logReq := fixture.Client().CoreV1().Pods(fixture.Namespace()).GetLogs(pod.Name, &corev1.PodLogOptions{})
-					logs, _ := logReq.Do(ctx).Raw()
-					t.Fatalf("Pod %s failed. Logs:\n%s", pod.Name, string(logs))
-				}
+			t.Logf("Pod %s is in phase: %s", pod.Name, pod.Status.Phase)
+			
+			if pod.Status.Phase == corev1.PodSucceeded {
+				t.Logf("Pod %s succeeded!", pod.Name)
+				return
+			}
+			if pod.Status.Phase == corev1.PodFailed {
+				logReq := fixture.Client().CoreV1().Pods(fixture.Namespace()).GetLogs(pod.Name, &corev1.PodLogOptions{})
+				logs, _ := logReq.Do(ctx).Raw()
+				t.Fatalf("Pod %s failed. Logs:\n%s", pod.Name, string(logs))
 			}
 		}
 	}
