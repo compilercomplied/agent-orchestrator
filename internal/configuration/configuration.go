@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+const ENV_PREFIX = "AO_"
+
 type ServerConfig struct {
 	Port        int
 	KubeConfig  string
@@ -19,42 +21,27 @@ type AgentConfig struct {
 }
 
 // GetEnv retrieves the value of the environment variable named by the key.
-// If the variable is not present, it returns an error.
-func GetEnv(key string) (string, error) {
-	value, ok := os.LookupEnv(key)
+// Panics if the variable is not present.
+func GetEnv(key string) string {
+	value, ok := os.LookupEnv(ENV_PREFIX + key)
 	if !ok {
-		return "", fmt.Errorf("environment variable %s is required", key)
+		panic(fmt.Sprintf("environment variable %s%s is required", ENV_PREFIX, key))
 	}
-	return value, nil
+	return value
 }
 
-func Load() (*ServerConfig, *AgentConfig, error) {
-	kubeConfig, err := GetEnv("KUBECONFIG")
-	if err != nil {
-		return nil, nil, err
-	}
-
+func Load() (*ServerConfig, *AgentConfig) {
 	serverConfig := &ServerConfig{
 		Port:        8080,
-		KubeConfig:  kubeConfig,
+		KubeConfig:  GetEnv("KUBECONFIG"),
 		Namespace:   "agents",
 		TaskTimeout: 30 * time.Minute,
 	}
 
-	githubToken, err := GetEnv("GITHUB_TOKEN")
-	if err != nil {
-		return nil, nil, err
-	}
-
-	anthropicKey, err := GetEnv("ANTHROPIC_API_KEY")
-	if err != nil {
-		return nil, nil, err
-	}
-
 	agentConfig := &AgentConfig{
-		GithubToken:  githubToken,
-		AnthropicKey: anthropicKey,
+		GithubToken:  GetEnv("GITHUB_TOKEN"),
+		AnthropicKey: GetEnv("ANTHROPIC_API_KEY"),
 	}
 
-	return serverConfig, agentConfig, nil
+	return serverConfig, agentConfig
 }

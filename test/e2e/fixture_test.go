@@ -41,7 +41,7 @@ func (f *E2EFixture) SetUp(ctx context.Context) error {
 	f.t.Log("Setting up E2E Fixture...")
 
 	// 1. Environment Verification
-	f.kubeconfig = getEnv("KUBECONFIG")
+	f.kubeconfig = getEnv("AO_KUBECONFIG")
 	f.serverURL = getEnv("E2E_SERVER_URL")
 
 	// 2. Setup Kubernetes Client

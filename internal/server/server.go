@@ -35,12 +35,9 @@ func NewServer(config Config, taskHandler *handler.TaskHandler) *Server {
 }
 
 func Run() {
-	logging.Init(os.Getenv("LOG_FORMAT"))
+	logging.Init(configuration.GetEnv("LOG_FORMAT"))
 
-	serverCfg, agentCfg, err := configuration.Load()
-	if err != nil {
-		logging.Fatalf("Failed to load configuration: %v", err)
-	}
+	serverCfg, agentCfg := configuration.Load()
 
 	agentManager, err := agent.NewManager(serverCfg.KubeConfig, serverCfg.Namespace, serverCfg.TaskTimeout, agentCfg)
 	if err != nil {
