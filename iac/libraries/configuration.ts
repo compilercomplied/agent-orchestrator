@@ -29,14 +29,17 @@ export function getAppConfig(
     // We check if the key starts with the project name and the provided prefix
     if (key.startsWith(`${configNamespace}:${prefix}`)) {
       const varName = key.substring(`${configNamespace}:`.length);
-      const secretValue = config.getSecret(varName);
-
-      if (secretValue !== undefined) {
-        secrets[varName] = secretValue;
+      
+      // config.get() returns the plain value only for non-secret configs.
+      // For secrets, it returns undefined (secrets must be accessed via getSecret).
+      const plainValue = config.get(varName);
+      
+      if (plainValue !== undefined) {
+        plainConfig[varName] = plainValue;
       } else {
-        plainConfig[varName] = config.require(varName);
+        // Value exists but config.get() returned undefined, so it must be a secret
+        secrets[varName] = config.requireSecret(varName);
       }
-
     }
   }
 
