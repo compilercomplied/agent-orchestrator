@@ -1,5 +1,6 @@
 [tools]
 go = "1.25.0"
+node = "24"
 "go:golang.org/x/tools/gopls" = "0.20.0"
 
 [tasks.build]
