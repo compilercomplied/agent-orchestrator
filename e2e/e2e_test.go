@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	v1 "github.com/compilercomplied/agent-orchestrator/api/v1"
+	v1 "github.com/compilercomplied/agent-orchestrator/src/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1 "k8s.io/api/core/v1"
 )

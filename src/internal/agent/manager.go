@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/compilercomplied/agent-orchestrator/internal/configuration"
-	"github.com/compilercomplied/agent-orchestrator/internal/logging"
+	"github.com/compilercomplied/agent-orchestrator/src/internal/configuration"
+	"github.com/compilercomplied/agent-orchestrator/src/internal/logging"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"

@@ -12,4 +12,4 @@ COPY . .
 # Set default environment variables for testing
 ENV GO111MODULE=on
 
-CMD ["go", "test", "-v", "-count=1", "./test/e2e/..."]
+CMD ["go", "test", "-v", "-count=1", "./e2e/..."]
