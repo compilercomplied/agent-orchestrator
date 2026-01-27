@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	v1 "github.com/compilercomplied/agent-orchestrator/api/v1"
-	"github.com/compilercomplied/agent-orchestrator/internal/agent"
-	"github.com/compilercomplied/agent-orchestrator/internal/logging"
+	v1 "github.com/compilercomplied/agent-orchestrator/src/api/v1"
+	"github.com/compilercomplied/agent-orchestrator/src/internal/agent"
+	"github.com/compilercomplied/agent-orchestrator/src/internal/logging"
 )
 
 type TaskHandler struct {

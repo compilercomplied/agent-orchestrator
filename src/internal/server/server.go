@@ -9,10 +9,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/compilercomplied/agent-orchestrator/internal/agent"
-	"github.com/compilercomplied/agent-orchestrator/internal/configuration"
-	"github.com/compilercomplied/agent-orchestrator/internal/handler"
-	"github.com/compilercomplied/agent-orchestrator/internal/logging"
+	"github.com/compilercomplied/agent-orchestrator/src/internal/agent"
+	"github.com/compilercomplied/agent-orchestrator/src/internal/configuration"
+	"github.com/compilercomplied/agent-orchestrator/src/internal/handler"
+	"github.com/compilercomplied/agent-orchestrator/src/internal/logging"
 )
 
 type Config struct {
