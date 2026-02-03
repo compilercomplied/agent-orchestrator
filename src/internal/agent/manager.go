@@ -49,7 +49,7 @@ func NewManager(kubeconfigBase64, namespace string, timeout time.Duration, agent
 		clientset: clientset,
 		namespace: namespace,
 		timeout:   timeout,
-		image:     "ghcr.io/compilercomplied/claude-agent:latest",
+		image:     "ghcr.io/compilercomplied/agents:latest",
 		agentCfg:  agentCfg,
 	}, nil
 }
@@ -57,7 +57,7 @@ func NewManager(kubeconfigBase64, namespace string, timeout time.Duration, agent
 // CreateTask creates the agent pod and returns its name immediately.
 func (m *Manager) CreateTask(ctx context.Context, task string) (string, error) {
 	podName := m.generatePodName(task)
-	logging.Printf("Starting Claude Code agent in k8s. Pod: %s, Task length: %d", podName, len(task))
+	logging.Printf("Starting agent in k8s. Pod: %s, Task length: %d", podName, len(task))
 
 	// Prepare Environment Variables
 	envVars := []corev1.EnvVar{
@@ -75,7 +75,7 @@ func (m *Manager) CreateTask(ctx context.Context, task string) (string, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: podName,
 			Labels: map[string]string{
-				"app":                          "claude-worker",
+				"app":                          "agent-worker",
 				"app.kubernetes.io/managed-by": "agent-orchestrator",
 			},
 		},
@@ -83,7 +83,7 @@ func (m *Manager) CreateTask(ctx context.Context, task string) (string, error) {
 			RestartPolicy: corev1.RestartPolicyNever,
 			Containers: []corev1.Container{
 				{
-					Name:  "claude-agent",
+					Name:  "agent-worker",
 					Image: m.image,
 					// Entrypoint is set in Dockerfile, we provide args to it.
 					// entrypoint.sh does `exec claude "$@"`
@@ -149,11 +149,11 @@ func (m *Manager) generatePodName(task string) string {
 	randBytes := make([]byte, 3)
 	if _, err := rand.Read(randBytes); err != nil {
 		// Fallback if rand fails (unlikely)
-		return fmt.Sprintf("claude-%s-%d", hashStr[:10], time.Now().UnixNano()%1000)
+		return fmt.Sprintf("agent-%s-%d", hashStr[:10], time.Now().UnixNano()%1000)
 	}
 	randSuffix := hex.EncodeToString(randBytes)
 	
-	return fmt.Sprintf("claude-%s-%s", hashStr[:10], randSuffix)
+	return fmt.Sprintf("agent-%s-%s", hashStr[:10], randSuffix)
 }
 
 func (m *Manager) ValidateConfig() error {

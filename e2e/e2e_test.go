@@ -73,8 +73,8 @@ func TestE2E_TaskExecution(t *testing.T) {
 			}
 
 			// Verify Labels for Observability
-			if pod.Labels["app"] != "claude-worker" {
-				t.Errorf("Pod %s missing expected label 'app: claude-worker'. Got: %v", pod.Name, pod.Labels["app"])
+			if pod.Labels["app"] != "agent-worker" {
+				t.Errorf("Pod %s missing expected label 'app: agent-worker'. Got: %v", pod.Name, pod.Labels["app"])
 			}
 			if pod.Labels["app.kubernetes.io/managed-by"] != "agent-orchestrator" {
 				t.Errorf("Pod %s missing expected label 'app.kubernetes.io/managed-by: agent-orchestrator'. Got: %v", pod.Name, pod.Labels["app.kubernetes.io/managed-by"])
