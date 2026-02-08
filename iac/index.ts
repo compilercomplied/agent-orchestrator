@@ -8,6 +8,8 @@ const APP_ID = "agent-orchestrator";
 const ENV_PREFIX = "AO_";
 const config = new pulumi.Config(APP_ID);
 
+const AGENTS_NAMESPACE = "agents";
+
 const nsControlPlane = new k8s.core.v1.Namespace("ns-agents-control-plane", {
   metadata: { name: "agents-control-plane" },
 });
@@ -20,17 +22,12 @@ const serviceAccount = new k8s.core.v1.ServiceAccount(`${APP_ID}-serviceaccount`
   },
 });
 
-const agentsNs = createAgentsNamespace(nsControlPlane, serviceAccount);
-createCleanupCronJob(agentsNs.namespace);
+createAgentsNamespace(AGENTS_NAMESPACE, nsControlPlane, serviceAccount);
+createCleanupCronJob(AGENTS_NAMESPACE);
 
 const appConfig = getAppConfig(
 	config, ENV_PREFIX, pulumi.runtime.allConfig(), config.name
 );
-
-const secret = new k8s.core.v1.Secret(`${APP_ID}-secrets`, {
-  metadata: { namespace: nsControlPlane.metadata.name },
-  stringData: appConfig.secrets,
-});
 
 const configMap = new k8s.core.v1.ConfigMap(`${APP_ID}-config`, {
   metadata: { namespace: nsControlPlane.metadata.name },
@@ -58,7 +55,6 @@ const deployment = new k8s.apps.v1.Deployment(`${APP_ID}-deployment`, {
           imagePullPolicy: "Always",
           ports: [{ containerPort: 8080 }],
           envFrom: [
-            { secretRef: { name: secret.metadata.name } },
             { configMapRef: { name: configMap.metadata.name } },
           ],
         }],
