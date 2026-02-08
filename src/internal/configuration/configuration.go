@@ -15,11 +15,6 @@ type ServerConfig struct {
 	TaskTimeout time.Duration
 }
 
-type AgentConfig struct {
-	GithubToken  string
-	AnthropicKey string
-}
-
 // GetEnv retrieves the value of the environment variable named by the key.
 // Panics if the variable is not present.
 func GetEnv(key string) string {
@@ -30,7 +25,7 @@ func GetEnv(key string) string {
 	return value
 }
 
-func Load() (*ServerConfig, *AgentConfig) {
+func Load() *ServerConfig {
 	serverConfig := &ServerConfig{
 		Port:        8080,
 		KubeConfig:  GetEnv("KUBECONFIG"),
@@ -38,10 +33,5 @@ func Load() (*ServerConfig, *AgentConfig) {
 		TaskTimeout: 30 * time.Minute,
 	}
 
-	agentConfig := &AgentConfig{
-		GithubToken:  GetEnv("GITHUB_TOKEN"),
-		AnthropicKey: GetEnv("ANTHROPIC_API_KEY"),
-	}
-
-	return serverConfig, agentConfig
+	return serverConfig
 }

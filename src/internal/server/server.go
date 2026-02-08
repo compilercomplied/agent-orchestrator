@@ -37,9 +37,9 @@ func NewServer(config Config, taskHandler *handler.TaskHandler) *Server {
 func Run() {
 	logging.Init(configuration.GetEnv("LOG_FORMAT"))
 
-	serverCfg, agentCfg := configuration.Load()
+	serverCfg := configuration.Load()
 
-	agentManager, err := agent.NewManager(serverCfg.KubeConfig, serverCfg.Namespace, serverCfg.TaskTimeout, agentCfg)
+	agentManager, err := agent.NewManager(serverCfg.KubeConfig, serverCfg.Namespace, serverCfg.TaskTimeout)
 	if err != nil {
 		logging.Fatalf("Failed to initialize agent manager: %v", err)
 	}

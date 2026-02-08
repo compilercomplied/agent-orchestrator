@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/compilercomplied/agent-orchestrator/src/internal/configuration"
 	"github.com/compilercomplied/agent-orchestrator/src/internal/logging"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,10 +21,9 @@ type Manager struct {
 	namespace string
 	timeout   time.Duration
 	image     string
-	agentCfg  *configuration.AgentConfig
 }
 
-func NewManager(kubeconfigBase64, namespace string, timeout time.Duration, agentCfg *configuration.AgentConfig) (*Manager, error) {
+func NewManager(kubeconfigBase64, namespace string, timeout time.Duration) (*Manager, error) {
 	if kubeconfigBase64 == "" {
 		return nil, fmt.Errorf("kubeconfig base64 string is required")
 	}
@@ -50,7 +48,6 @@ func NewManager(kubeconfigBase64, namespace string, timeout time.Duration, agent
 		namespace: namespace,
 		timeout:   timeout,
 		image:     "ghcr.io/compilercomplied/agents:latest",
-		agentCfg:  agentCfg,
 	}, nil
 }
 
@@ -59,18 +56,7 @@ func (m *Manager) CreateTask(ctx context.Context, task string) (string, error) {
 	podName := m.generatePodName(task)
 	logging.Printf("Starting agent in k8s. Pod: %s, Task length: %d", podName, len(task))
 
-	// Prepare Environment Variables
-	envVars := []corev1.EnvVar{
-		{
-			Name:  "ANTHROPIC_API_KEY",
-			Value: m.agentCfg.AnthropicKey,
-		},
-		{
-			Name:  "GITHUB_TOKEN",
-			Value: m.agentCfg.GithubToken,
-		},
-	}
-
+	// Create Pod
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: podName,
@@ -88,7 +74,15 @@ func (m *Manager) CreateTask(ctx context.Context, task string) (string, error) {
 					// Entrypoint is set in Dockerfile, we provide args to it.
 					// entrypoint.sh does `exec claude "$@"`
 					Args: []string{"--dangerously-skip-permissions", task},
-					Env:  envVars,
+					EnvFrom: []corev1.EnvFromSource{
+						{
+							SecretRef: &corev1.SecretEnvSource{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: "dev-environment-secrets",
+								},
+							},
+						},
+					},
 				},
 			},
 		},
